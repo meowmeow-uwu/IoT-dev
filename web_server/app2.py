@@ -46,7 +46,6 @@ def motor_worker():
     """Luồng chạy nền: quay hết nhịp -> nghỉ 0.5s -> kiểm tra lệnh mới"""
     global motor_running, target_angle, target_direction
     while motor_running:
-        # Lấy thông số hiện tại để quay cho xong trọn vẹn nhịp này
         curr_angle = target_angle
         curr_dir = target_direction
         
@@ -62,7 +61,7 @@ def motor_worker():
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('index2.html')
 
 @app.route('/api/sensor')
 def get_sensor_data():
@@ -81,23 +80,25 @@ def get_sensor_data():
 def control_motor():
     global motor_running, target_angle, target_direction, motor_thread
     data = request.get_json()
-    angle = float(data.get('angle', 0))
-    direction = data.get('direction', 'thuan')
+    raw_angle = float(data.get('angle', 0))
 
-    if angle > 0:
-        # Cập nhật góc và chiều mới (nhịp hiện tại quay xong sẽ áp dụng ngay cái này)
-        target_angle = angle
-        target_direction = direction
+    if raw_angle != 0:
+        # Dương -> Thuận, Âm -> Nghịch
+        target_direction = "thuan" if raw_angle > 0 else "nghich"
+        target_angle = abs(raw_angle)
 
-        # Nếu luồng chưa chạy thì khởi động luồng mới
         if not motor_running or motor_thread is None or not motor_thread.is_alive():
             motor_running = True
             motor_thread = threading.Thread(target=motor_worker, daemon=True)
             motor_thread.start()
 
-        return jsonify({'status': 'success', 'message': f'Đã cập nhật: Quay {direction} {angle}°, nghỉ 0.5s lặp lại'})
+        dir_label = "thuận" if target_direction == "thuan" else "nghịch"
+        return jsonify({
+            'status': 'success',
+            'message': f'Đã cập nhật: Quay {dir_label} {target_angle}°, nghỉ 0.5s lặp lại'
+        })
 
-    return jsonify({'status': 'error', 'message': 'Góc không hợp lệ'})
+    return jsonify({'status': 'error', 'message': 'Góc quay phải khác 0'})
 
 @app.route('/api/motor/stop', methods=['POST'])
 def stop_motor():

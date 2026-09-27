@@ -5,8 +5,10 @@ from RpiMotorLib import RpiMotorLib
 
 # 1. Khởi tạo Cảm biến & Động cơ
 dht_device = adafruit_dht.DHT11(board.D17)
-STEPPER_PINS = [9, 25, 10, 4] 
+STEPPER_PINS = [18, 23, 24, 27] 
 mymotor = RpiMotorLib.BYJMotor("MyMotor", "28BYJ")
+
+TEMP_THRESHOLD = 30
 
 def quay_dong_co(angle, direction="thuan"):
     """
@@ -39,19 +41,19 @@ try:
             if t is not None:
                 print(f"Nhiệt độ: {t:.1f}°C | Độ ẩm: {h:.1f}%")
                 
-                if t >= 30:
-                    print("-> Nhiệt >= 30°C: Quay 180 độ ngược chiều")
-                    quay_dong_co(180, "nghich")
+                if t >= TEMP_THRESHOLD:
+                    print("-> Nhiệt >= 30°C: Quay 60 độ ngược chiều")
+                    quay_dong_co(60, "thuan")
                 else:
-                    print("-> Nhiệt < 30°C: Quay 90 độ thuận chiều")
-                    quay_dong_co(90, "thuan")
+                    print("-> Nhiệt < 30°C: Quay 120 độ thuận chiều")
+                    quay_dong_co(120, "nghich")
                 
-                print("-> Đã quay xong, nghỉ 2s...")
+                #print("-> Đã quay xong, nghỉ 2s...")
                 
         except RuntimeError as e:
             print("Loi cam bien", e)
 
-        time.sleep(2.0)
+        time.sleep(0.5)
 
 except KeyboardInterrupt:
     print("\nĐã dừng chương trình.")

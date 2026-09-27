@@ -5,9 +5,9 @@ from time import sleep
 SENSOR_PIN = 17
 BUTTON_PIN = 27
 
-MOTOR_EN = 18
-MOTOR_IN1 = 23
-MOTOR_IN2 = 24
+MOTOR_EN = 9
+MOTOR_IN1 = 10
+MOTOR_IN2 = 11
 
 # Cấu hình tốc độ
 FAST_SPEED = 0.8
