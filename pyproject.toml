@@ -9,6 +9,8 @@ dependencies = [
     "gpiozero>=2.0.1.post3",
     "opencv-python>=5.0.0.93",
     "pigpio>=1.78",
+    "python-dotenv>=1.2.3",
+    "requests>=2.34.2",
 ]
 
 [project.scripts]

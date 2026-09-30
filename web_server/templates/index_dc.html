@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Điều Khiển Động Cơ DC & Siêu Âm</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f9;
+            padding: 20px;
+            margin: 0;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            margin: 15px auto;
+        }
+
+        .data {
+            font-size: 36px;
+            font-weight: bold;
+            color: #0066cc;
+            margin: 10px 0;
+        }
+
+        .unit {
+            font-size: 20px;
+            color: #666;
+        }
+
+        input[type="range"] {
+            width: 90%;
+            margin: 15px 0;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        button {
+            padding: 12px 15px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 6px;
+            color: white;
+            font-weight: bold;
+        }
+
+        .btn-thuan { background-color: #28a745; flex: 1; }
+        .btn-nghich { background-color: #17a2b8; flex: 1; }
+        .btn-dung {
+            background-color: #dc3545;
+            display: block;
+            width: 100%;
+            margin-top: 15px;
+            padding: 15px;
+            font-size: 18px;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="card">
+        <h2>📡 Khoảng Cách Siêu Âm</h2>
+        <div class="data">
+            <span id="distance">--</span> <span class="unit">cm</span>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>⚙️ Điều Khiển Động Cơ DC</h2>
+
+        <div>
+            Tốc độ: <span id="speedDisplay" style="font-weight: bold; color: #28a745;">100%</span>
+        </div>
+        <!-- Chỉ gửi API khi người dùng nhả chuột (onchange), tránh nghẽn mạng -->
+        <input type="range" id="speedRange" min="20" max="100" value="100" 
+               oninput="document.getElementById('speedDisplay').innerText = this.value + '%'"
+               onchange="onSpeedChange()">
+
+        <div class="btn-group">
+            <button class="btn-thuan" onclick="sendMotorCommand('thuan')">Thuận ↻</button>
+            <button class="btn-nghich" onclick="sendMotorCommand('nghich')">Nghịch ↺</button>
+        </div>
+
+        <button class="btn-dung" onclick="stopMotor()">🛑 PHANH DỪNG NGAY</button>
+        <p id="motor-status" style="margin-top: 15px; font-weight: bold;"></p>
+    </div>
+
+    <script>
+        let isFetchingDistance = false;
+
+function fetchDistance() {
+    if (isFetchingDistance) return; // Bỏ qua nếu lần fetch trước chưa xong
+    isFetchingDistance = true;
+
+    fetch('/api/distance')
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'ok') {
+                document.getElementById('distance').innerText = data.distance;
+            }
+        })
+        .catch(() => {})
+        .finally(() => {
+            isFetchingDistance = false;
+        });
+}
+
+// 400ms là tốc độ mắt người nhìn thấy mượt mà không gây nghẽn băng thông Pi
+setInterval(fetchDistance, 400);
+
+        function onSpeedChange() {
+            if (currentDirection !== 'dung') {
+                sendMotorCommand(currentDirection);
+            }
+        }
+
+        function sendMotorCommand(direction) {
+            currentDirection = direction;
+            const speed = document.getElementById('speedRange').value;
+            const statusText = document.getElementById('motor-status');
+
+            fetch('/api/motor', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ direction: direction, speed: speed })
+            })
+            .then(res => res.json())
+            .then(data => {
+                statusText.innerText = data.message;
+                statusText.style.color = "#28a745";
+            });
+        }
+
+        // Lệnh dừng ưu tiên cao
+        function stopMotor() {
+            currentDirection = 'dung';
+            const statusText = document.getElementById('motor-status');
+            
+            fetch('/api/motor/stop', { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                statusText.innerText = data.message;
+                statusText.style.color = "#dc3545";
+            });
+        }
+    </script>
+</body>
+
+</html>
